@@ -1,0 +1,217 @@
+#!/home/arch/code/venv/bin/python
+
+import random
+import os
+import sys
+import subprocess
+# from os.path import devnull, isfile
+
+validExt = ['jpg', 'png', 'jpeg', 'webp']
+
+argc = len(sys.argv)
+argv = sys.argv
+# print(argc)
+
+cwpConf = os.path.expanduser('~/.config/cwp/cwp.conf')
+
+path = os.path.expanduser('~/wallpapers/')
+
+# conf reader
+if os.path.exists(cwpConf):
+    with open(cwpConf) as conf:
+        lines = conf.readlines()
+    for line in lines:
+        v = line.replace(' ','').split('=')
+        if v[0] == "path":
+            path = os.path.expanduser(v[1].strip().replace("'", "").replace('\n',''))
+        print(v)
+
+images = [] 
+
+def getImages():
+    global images
+    images = []
+    for filename in os.listdir(path):
+        if os.path.isfile(os.path.join(path, filename)) and filename.split('.')[-1].lower() in validExt:
+            images.append(filename)
+    
+getImages()
+
+conf = os.path.expanduser('~/.config/hypr/hyprpaper.conf')
+rconf = '~/.config/hypr/hyprpaper.conf'
+with open(conf, 'r') as cfg:
+    line = cfg.readlines()[2]
+
+idx = -1
+for i in range(len(images)):
+    if images[i] in line:
+        idx = i
+        break
+
+
+def makeConfig(imagename):
+    try:
+        subprocess.run(['killall','hyprpaper'], capture_output=True, text=True)
+    
+    finally:
+        try:
+            with open(conf, 'r') as cfg:
+                lines = cfg.readlines()
+                
+            lines[2] = "\tpath = " + os.path.join(path, imagename) + "\n"
+            
+            with open(conf, 'w') as cfg:
+                cfg.writelines(lines)
+        except:
+            print('ERR!! hyprpaper likely does not exist on your system. install with sudo pacman -S hyprpaper')
+        subprocess.Popen(['hyprpaper'], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+def randWp():
+    img = random.choice(images)
+    makeConfig(img)
+    print(f">> {img}")
+
+def nextWp():
+    img = images[(idx + 1) % len(images)]
+    makeConfig(img)
+    print(f">> {img}")
+
+def prevWp():
+    img = images[(idx - 1) % len(images)]
+    makeConfig(img)
+    print(f"<< {img}")
+
+# print(len(images))
+def switchTo(img):
+    partial = None
+    for i in range(len(images)):
+        if img.split('.')[0] == images[i].split('.')[0]:
+            makeConfig(images[i])
+            print(f">> \033[32m{images[i]}\033[0m << ")
+            return
+        
+        if img in images[i] and partial is None:
+            partial = images[i]
+
+    if partial:
+        makeConfig(partial)
+        k = partial.find(img)
+        r = partial[:k] + "\033[32m" + partial[k:k+len(img)] + "\033[0m" + partial[k+len(img):]
+        print(f">> {r} << ")
+        return
+
+    print(f"!! ERR:NO FILE WITH NAME \033[31m{img}\033[0m !!")
+
+
+if argc == 1:
+    randWp()
+
+def reLog(report) -> None:
+    return
+    with open('/home/arch/code/scripts/log.txt', 'a') as log:
+        log.writelines(report)
+
+def printHelp(arg = None):
+    if arg is None:
+        print(f" ---- Help ----")
+        print(f"Commands      - Usage\n")
+        print("help     | h   - prints this, add one of the following commands to see more detailed description")
+        print("set-path | sp  - set path from which to choose wallpapers from")
+        print("random   | r   - random image in path")
+        print("next     | n   - next wallpaper in index")
+        print("previous | p   - previous wallpaper in index")
+        print("list     | li  - list all images in path")
+        print("set      | s   - set image by index or name\n")
+        print(f"\n---- Config ----")
+        print("currently only supports 1 argument")
+        print("path")
+        print(">> usage: path=[path : directory]")
+        print("located in ~/.config/cwp/cwp.conf")
+        return
+    if arg in ['help', 'h']:
+        print("\n-- help --")
+        print("\tusage: help [command: optional]")
+        print("\tprints info about commands\n")
+    elif arg in ['set-path', 'sp']:
+        print("\n-- set-path --")
+        print("\tusage: set-path [path: required]")
+        print("\tset path (folder) which you can choose images for backgound")
+        print("\tvolatile, non persistent. one time use. use before set or random commands\n")
+    elif arg in ['random', 'r']:
+        print('\n-- random --' )
+        print('\tusage: random')
+        print("\tsets random wallpaper from path\n")
+    elif arg in ['next', 'n']:
+        print("\n-- next -- ")
+        print('\tusage: next')
+        print('\tnext image in path\n')
+    elif arg in ['previous', 'prev', 'p']:
+        print("\n-- previous --")
+        print("\tusage: previous")
+        print('\tprevious image in path\n')
+    elif arg in ['list', 'li', 'l']:
+        print('\n-- list --')
+        print('\tusage: list')
+        print('\tlists images in path\n')
+    elif arg in ['set', 's']:
+        print('\n-- set --')
+        print('\tusage: set [filename or index : required]\n')
+    else:
+        print('command not recognized')
+
+
+for i in range(argc - 1):
+    report = f"av: {argv}"
+    reLog(report)
+    i += 1 
+    # print(argv[i])
+    if argv[i] in ['help', 'h']:
+        if i + 1 < argc:
+            printHelp(argv[i+1])
+        else:
+            printHelp()
+        break
+    if argv[i] in ['set-path', 'sp']:
+        if i + 1 < argc:
+            path = argv[i+1]
+            print(f"set wallpaper path to {path}")
+            getImages()
+            i += 1
+        else:
+            print('please set a proper path, none recieved.')
+    if argv[i] in ['random', 'r']:
+        reLog(report + " -> random\n")
+        randWp()
+    elif argv[i] in ['next', 'n']:
+        reLog(report + " -> next\n")
+        nextWp()
+    elif argv[i] in ['previous', 'p', 'prev']:
+        reLog(report + " -> previous\n")
+        prevWp()
+    elif argv[i] in ['list', 'li', 'l']:
+        reLog(report + " -> list\n")
+        print()
+        print(f"path: {path}")
+        print("\n".join(f">> [{k+1}]\t{images[k]}" for k in range(len(images))))
+        print()
+    elif argv[i] in ['set', 's']:
+        report += " -> set "
+        if i + 1 < argc:
+            reLog(report + ": continue (unknown)\n")
+            try:
+                v = int(argv[i+1]) - 1
+                switchTo(images[v])
+            except IndexError:
+                print(f"!! ERR:NO FILE WITH INDEX \033[31m{v+1}\033[0m !!")
+            except ValueError:
+                switchTo(argv[i+1])
+            finally:
+                i += 1
+        else:
+            reLog(report + ": fail")
+            print("image name not provided")
+    else:
+        reLog(report + " -> failed\n")
+        makeConfig(images[i])
+
+    # break
