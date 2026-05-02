@@ -24,7 +24,7 @@ if os.path.exists(cwpConf):
         v = line.replace(' ','').split('=')
         if v[0] == "path":
             path = os.path.expanduser(v[1].strip().replace("'", "").replace('\n',''))
-        print(v)
+        # print(v)
 
 images = [] 
 
