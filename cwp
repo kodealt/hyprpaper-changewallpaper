@@ -24,7 +24,6 @@ if os.path.exists(cwpConf):
         v = line.replace(' ','').split('=')
         if v[0] == "path":
             path = os.path.expanduser(v[1].strip().replace("'", "").replace('\n',''))
-        # print(v)
 
 images = [] 
 
@@ -59,7 +58,8 @@ def makeConfig(imagename):
                 lines = cfg.readlines()
                 
             lines[2] = "\tpath = " + os.path.join(path, imagename) + "\n"
-            
+            # print("".join(line for line in lines))
+            # print(imagename)
             with open(conf, 'w') as cfg:
                 cfg.writelines(lines)
         except:
@@ -159,8 +159,8 @@ def printHelp(arg = None):
     else:
         print('command not recognized')
 
-
-for i in range(argc - 1):
+i = 0
+while i < argc:
     report = f"av: {argv}"
     reLog(report)
     i += 1 
@@ -200,6 +200,7 @@ for i in range(argc - 1):
             reLog(report + ": continue (unknown)\n")
             try:
                 v = int(argv[i+1]) - 1
+                # print(images[v])
                 switchTo(images[v])
             except IndexError:
                 print(f"!! ERR:NO FILE WITH INDEX \033[31m{v+1}\033[0m !!")
@@ -212,6 +213,7 @@ for i in range(argc - 1):
             print("image name not provided")
     else:
         reLog(report + " -> failed\n")
-        makeConfig(images[i])
-
+        # makeConfig(images[i])
+        
+    i += 1
     # break
