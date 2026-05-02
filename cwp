@@ -160,7 +160,7 @@ def printHelp(arg = None):
         print('command not recognized')
 
 i = 0
-while i < argc:
+while i < argc - 1:
     report = f"av: {argv}"
     reLog(report)
     i += 1 
